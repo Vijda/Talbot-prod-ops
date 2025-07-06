@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talabat Product Review - Customer Sentiment Analysis</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #fff5f0 0%, #ffffff 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+            color: white;
+            padding: 40px 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(255, 107, 53, 0.2);
+            border-color: #ff6b35;
+        }
+
+        .stat-card h3 {
+            color: #ff6b35;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sentiment-table {
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: #fff;
+        }
+
+        .sentiment-row {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1fr;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.3s ease;
+        }
+
+        .sentiment-row:hover {
+            background-color: #fff5f0;
+        }
+
+        .sentiment-row.header {
+            background: #fff;
+            color: #ff6b35;
+            font-weight: 700;
+            font-size: 1.1rem;
+            border-bottom: 2px solid #ff6b35;
+            box-shadow: 0 2px 8px rgba(255,107,53,0.08);
+        }
+
+        .sentiment-row.header > div {
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .sentiment-label, .sentiment-count, .sentiment-percentage {
+            text-align: center;
+        }
+
+        .sentiment-label {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .metrics-list {
+            list-style: none;
+        }
+
+        .metrics-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .metrics-list li:last-child {
+            border-bottom: none;
+        }
+
+        .metric-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            color: #ff6b35;
+            text-align: right;
+        }
+
+        .sentiment-row:last-child {
+            border-bottom: none;
+        }
+
+        .sentiment-count {
+            font-weight: 700;
+            color: #ff6b35;
+        }
+
+        .sentiment-percentage {
+            background: #ff6b35;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .chart-container h3 {
+            color: #ff6b35;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .issues-list, .positive-list, .suggestions-list {
+            list-style: none;
+        }
+
+        .issues-list li, .positive-list li, .suggestions-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .issues-list li:last-child, .positive-list li:last-child, .suggestions-list li:last-child {
+            border-bottom: none;
+        }
+
+        .issue-name, .positive-name, .suggestion-name {
+            font-weight: 500;
+        }
+
+        .issue-count, .positive-count, .suggestion-count {
+            background: #ff6b35;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .download-section {
+            text-align: center;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin-top: 30px;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
+        }
+
+        .icon {
+            font-size: 1.2rem;
+        }
+
+        .negative { color: #dc3545; }
+        .positive { color: #28a745; }
+        .neutral { color: #6c757d; }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ff6b35;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-chart-line"></i> Talabat Product Operations Review</h1>
+            <p>Customer Sentiment Analysis Dashboard</p>
+        </div>
+
+        <!-- Customer Sentiment Analysis -->
+        <div class="stat-card" style="margin-bottom: 30px;">
+            <h3><i class="fas fa-chart-pie"></i> Customer Sentiment Analysis</h3>
+            <div class="sentiment-table">
+                <div class="sentiment-row header">
+                    <div class="sentiment-label">Sentiment</div>
+                    <div class="sentiment-count">Reviews</div>
+                    <div class="sentiment-percentage">Percentage</div>
+                </div>
+                <div class="sentiment-row">
+                    <div class="sentiment-label">
+                        <i class="fas fa-thumbs-down negative"></i>
+                        NEGATIVE
+                    </div>
+                    <div class="sentiment-count">{{ data.sentiment.sentiment_distribution.NEGATIVE }} reviews</div>
+                    <div class="sentiment-percentage">{{ data.sentiment.sentiment_percentages.NEGATIVE }}%</div>
+                </div>
+                <div class="sentiment-row">
+                    <div class="sentiment-label">
+                        <i class="fas fa-thumbs-up positive"></i>
+                        POSITIVE
+                    </div>
+                    <div class="sentiment-count">{{ data.sentiment.sentiment_distribution.POSITIVE }} reviews</div>
+                    <div class="sentiment-percentage">{{ data.sentiment.sentiment_percentages.POSITIVE }}%</div>
+                </div>
+                <div class="sentiment-row">
+                    <div class="sentiment-label">
+                        <i class="fas fa-minus neutral"></i>
+                        NEUTRAL
+                    </div>
+                    <div class="sentiment-count">{{ data.sentiment.sentiment_distribution.NEUTRAL }} reviews</div>
+                    <div class="sentiment-percentage">{{ data.sentiment.sentiment_percentages.NEUTRAL }}%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Issues and Insights -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3><i class="fas fa-exclamation-triangle"></i> Top 4 Issues (Most Repeated)</h3>
+                <ul class="issues-list">
+                    {% for issue, count in data.sentiment.top_issues %}
+                    <li>
+                        <span class="issue-name">{{ issue }}</span>
+                        <span class="issue-count">{{ count }} mentions</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="stat-card">
+                <h3><i class="fas fa-star"></i> Top 3 Positive Aspects</h3>
+                <ul class="positive-list">
+                    {% for aspect, count in data.sentiment.top_positive_aspects %}
+                    <li>
+                        <span class="positive-name">{{ aspect }}</span>
+                        <span class="positive-count">{{ count }} mentions</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Customer Suggestions -->
+        <div class="stat-card" style="margin-top: 30px;">
+            <h3><i class="fas fa-lightbulb"></i> Top 3 Customer Suggestions</h3>
+            <ul class="suggestions-list">
+                {% for suggestion, count in data.sentiment.top_suggestions %}
+                <li>
+                    <span class="suggestion-name">{{ suggestion }}</span>
+                    <span class="suggestion-count">{{ count }} mentions</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Zomato Customer Experience Metrics -->
+        {% if data.zomato.customer_experience %}
+        <div class="stats-grid" style="margin-top: 30px;">
+            <div class="stat-card">
+                <h3><i class="fas fa-clock"></i> Customer Experience Metrics</h3>
+                <ul class="metrics-list">
+                    {% if data.zomato.customer_experience.avg_delay %}
+                    <li>
+                        <span class="metric-name">Average Delay</span>
+                        <span class="metric-value">{{ data.zomato.customer_experience.avg_delay }} seconds</span>
+                    </li>
+                    {% endif %}
+                    {% if data.zomato.customer_experience.percent_delayed %}
+                    <li>
+                        <span class="metric-name">% Delayed Orders</span>
+                        <span class="metric-value">{{ data.zomato.customer_experience.percent_delayed }}%</span>
+                    </li>
+                    {% endif %}
+                    {% if data.zomato.customer_experience.first_time_success_rate %}
+                    <li>
+                        <span class="metric-name">First-time Order Success Rate</span>
+                        <span class="metric-value">{{ data.zomato.customer_experience.first_time_success_rate }}%</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <div class="stat-card">
+                <h3><i class="fas fa-chart-line"></i> Platform Behavior</h3>
+                <ul class="metrics-list">
+                    {% if data.zomato.platform_behavior.success_by_platform %}
+                    <li>
+                        <span class="metric-name">Success Rate by Platform</span>
+                        <span class="metric-value">
+                            {% for platform, rate in data.zomato.platform_behavior.success_by_platform.items() %}
+                            {{ platform }}: {{ "%.2f"|format(rate) }}%<br>
+                            {% endfor %}
+                        </span>
+                    </li>
+                    {% endif %}
+                    {% if data.zomato.platform_behavior.avg_gmv_by_platform %}
+                    <li>
+                        <span class="metric-name">Average GMV by Platform</span>
+                        <span class="metric-value">
+                            {% for platform, gmv in data.zomato.platform_behavior.avg_gmv_by_platform.items() %}
+                            {{ platform }}: {{ "%.2f"|format(gmv) }}<br>
+                            {% endfor %}
+                        </span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Failure Trends -->
+        {% if data.zomato.failure_trends %}
+        <div class="stat-card" style="margin-top: 30px;">
+            <h3><i class="fas fa-exclamation-circle"></i> Failure & Root Cause Trends</h3>
+            <ul class="metrics-list">
+                {% if data.zomato.failure_trends.overall_failure_rate %}
+                <li>
+                    <span class="metric-name">Overall Failure Rate</span>
+                    <span class="metric-value">{{ data.zomato.failure_trends.overall_failure_rate }}%</span>
+                </li>
+                {% endif %}
+                {% if data.zomato.failure_trends.failure_by_owner %}
+                <li>
+                    <span class="metric-name">Failure by Owner</span>
+                    <span class="metric-value">
+                        {% for owner, count in data.zomato.failure_trends.failure_by_owner.items() %}
+                        {{ owner }}: {{ count }}<br>
+                        {% endfor %}
+                    </span>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Download Section -->
+        <div class="download-section">
+            <h3><i class="fas fa-download"></i> Download Complete Analysis</h3>
+            <p style="margin: 20px 0; color: #666;">Get the full detailed analysis with all reviews and insights</p>
+            <a href="/download_results" class="download-btn" onclick="showLoading()">
+                <i class="fas fa-file-excel icon"></i>
+                Download Comprehensive Analysis Results
+            </a>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px;">Preparing your download...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+            }, 3000);
+        }
+
+        // Add smooth scrolling and animations
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.stat-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html> 
